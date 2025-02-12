@@ -27,16 +27,17 @@ def create_payment_method () -> str:
 
 # Crear un pago
 
-def create_payment (payment_method_id: str, cliente_id: str):
+def create_payment (payment_method_id: str, client_id: str, amount: int, currency:str, product_id:str) :
     
     try:
         payment = stripe.PaymentIntent.create(
-            amount=5 * 100,
-            currency="usd",
+            amount=amount,
+            currency=currency,
             payment_method_types=["card"],
             payment_method=payment_method_id,
             confirm=True,
-            customer=cliente_id
+            customer=client_id,
+            metadata={"product_id": product_id}
 
         )
     
@@ -65,10 +66,10 @@ def create_user (name, email):
         print(f"Error al crear el cliente: {e.user_message}")
         return ""
     
-create_user ('David', 'hello@davilondev.com')
+#   
 
 
-# Asociar métdo de pago a un cliente
+# Asociar método de pago a un cliente
 
 
 def add_payment_method_to_user (payment_method_id, client_id):
@@ -83,36 +84,34 @@ def add_payment_method_to_user (payment_method_id, client_id):
     except stripe.error.StripeError as e:
         print(f"Error al asociar el método de pago al cliente: {e.user_message}")
 
-def get_products ():
-    try:
-        products = stripe.Product.list(limit=5)
-        for product in products:
+def get_product():
+    
+    products = stripe.Product.list(limit=1)
+    return products ["data"] [0]["id"]
         
-            print(f"Productos: {product}")
 
-    except stripe.error.StripeError as e:
-        print(f"Error al obtener los productos: {e.user_message}")
-
-# def create_product (name, price):
-
-#     try:
-#         product = stripe.Product.create(
-#             price=price,
-#             name=name,
-#             description="Producto de prueba",   
-#         )
-#         print(f"Producto {name} creado con ID: {product.id}")
-
-#         return product.id
-#     except stripe.error.StripeError as e:
-#         print(f"Error al crear el producto: {e.user_message}")
-#         return ""
 
    
-# client_id = create_user ('David', 'hello@davilondev.com')
+def get_product_price (product_id):
+
+    price = stripe.Price.list(product=product_id, limit=1)
+
+    price_id= price ["data"] [0]["id"]
+    amount = price ["data"] [0]["unit_amount"]
+    currency = price ["data"] [0]["currency"]
+
+    return price_id, amount, currency
+
+
    
-# payment_method_id=create_payment_method ()
+client_id = create_user ('María', 'maridp@gmail.com')
+   
+payment_method_id=create_payment_method ()
 
-# create_payment(payment_method_id, client_id)
+add_payment_method_to_user(payment_method_id, client_id)
 
-get_products()
+
+product_id = get_product()
+price_id, amount, currency = get_product_price(product_id)
+
+create_payment(payment_method_id, client_id, amount, currency)
